@@ -1,11 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
+<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jackblack105.Controller">
+    <padding>
+        <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
+    </padding>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jackblack105.Controller">
-    <children>
-        <Label fx:id="label" text="Label" />
-    </children>
-</StackPane>
+    <!-- Title -->
+    <Label text="Blackjack" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+
+    <!-- Player Count Selection -->
+    <HBox alignment="CENTER" spacing="10.0">
+        <Label text="Number of Players:" style="-fx-font-size: 16px;"/>
+        <ComboBox fx:id="playerCountComboBox" />
+    </HBox>
+
+    <!-- Dynamic Container for Player Names -->
+    <VBox fx:id="playerNamesContainer" alignment="CENTER" spacing="10.0">
+        <!-- TextFields will be automatically injected here by the Controller -->
+    </VBox>
+
+    <!-- Launch Button -->
+    <Button text="Launch Game" onAction="#launchGame" style="-fx-font-size: 18px; -fx-padding: 10 20;"/>
+</VBox>
