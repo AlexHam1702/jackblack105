@@ -5,28 +5,48 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.GaussianBlur?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jackblack105.Controller">
-    <padding>
-        <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
-    </padding>
+<StackPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jackblack105.Controller">
+    
+    <!-- Layer 1: Background Image with Blur Effect -->
+    <ImageView fitWidth="1920" fitHeight="1080" preserveRatio="false">
+        <image>
+            <Image url="@casino_bg.jpg" />
+        </image>
+        <effect>
+            <!-- Increase or decrease the radius to change the blur intensity -->
+            <GaussianBlur radius="15.0" />
+        </effect>
+    </ImageView>
 
-    <!-- Title -->
-    <Label text="Blackjack" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+    <!-- Layer 2: Your existing UI Menu (Unblurred) -->
+    <!-- A semi-transparent white background is added to the VBox so text stays readable -->
+    <VBox alignment="CENTER" spacing="20.0" maxWidth="500" maxHeight="400" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 20;">
+        <padding>
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
+        </padding>
 
-    <!-- Player Count Selection -->
-    <HBox alignment="CENTER" spacing="10.0">
-        <Label text="Number of Players:" style="-fx-font-size: 16px;"/>
-        <ComboBox fx:id="playerCountComboBox" />
-    </HBox>
+        <!-- Title -->
+        <Label text="Blackjack with Jack Black" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
 
-    <!-- Dynamic Container for Player Names -->
-    <VBox fx:id="playerNamesContainer" alignment="CENTER" spacing="10.0">
-        <!-- TextFields will be automatically injected here by the Controller -->
+        <!-- Player Count Selection -->
+        <HBox alignment="CENTER" spacing="10.0">
+            <Label text="Number of Players:" style="-fx-font-size: 16px;"/>
+            <ComboBox fx:id="playerCountComboBox" />
+        </HBox>
+
+        <!-- Dynamic Container for Player Names -->
+        <VBox fx:id="playerNamesContainer" alignment="CENTER" spacing="10.0">
+            <!-- TextFields will be automatically injected here by the Controller -->
+        </VBox>
+
+        <!-- Launch Button -->
+        <Button text="Launch Game" onAction="#launchGame" style="-fx-font-size: 18px; -fx-padding: 10 20;"/>
     </VBox>
-
-    <!-- Launch Button -->
-    <Button text="Launch Game" onAction="#launchGame" style="-fx-font-size: 18px; -fx-padding: 10 20;"/>
-</VBox>
+</StackPane>

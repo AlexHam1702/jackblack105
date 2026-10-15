@@ -23,14 +23,14 @@ public class Controller {
 
     @FXML
     public void initialize() {
-        // Populate the dropdown with options for 1 to 3 players
+        // Populate the menu with options for 1 to 3 players
         playerCountComboBox.getItems().addAll(1, 2, 3);
         
         // Set default value and trigger the field generation
         playerCountComboBox.setValue(1);
         updatePlayerFields();
 
-        // Listen for changes in the dropdown to update the text fields dynamically
+        // Listen for changes to update text fields dynamically
         playerCountComboBox.setOnAction(event -> updatePlayerFields());
     }
 
