@@ -1,22 +1,20 @@
 package jackblack105;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Player {
     // ATTRIBUTS
     private String nom;
     private int porteMonnaie;
     private int miseActuelle;
-    private ArrayList<String> main;
-    private String carte;
+    private ArrayList<Carte> main; 
 
     // CONSTRUCTEUR
     public Player(String nom, int jetonsInitiaux) {
         this.nom = nom;
         this.porteMonnaie = jetonsInitiaux;
         this.miseActuelle = 0;
-        this.main = new ArrayList<String>();
+        this.main = new ArrayList<Carte>();
     }
 
     // GESTION DES MISES
@@ -44,7 +42,7 @@ public class Player {
     }
 
     // GESTION DE LA MAIN
-    public void ajouterCarte(String nouvelleCarte) {
+    public void ajouterCarte(Carte nouvelleCarte) { 
         if (nouvelleCarte != null) {
             this.main.add(nouvelleCarte);
         }
@@ -58,10 +56,10 @@ public class Player {
         int score = 0;
         int nombreAs = 0;
 
-        for (String carte : this.main) {
+        for (Carte carte : this.main) { 
             int valeur = carte.getValeur();
             score += valeur;
-            if (valeur == 11) {
+            if (valeur == 11) { 
                 nombreAs++;
             }
         }
@@ -78,7 +76,7 @@ public class Player {
     public String getNom() {
         return this.nom;
     }
-
+    
     public int getPorteMonnaie() {
         return this.porteMonnaie;
     }
@@ -87,7 +85,7 @@ public class Player {
         return this.miseActuelle;
     }
 
-    public ArrayList<String> getMain() {
+    public ArrayList<Carte> getMain() { 
         return this.main;
     }
 
@@ -99,4 +97,4 @@ public class Player {
                " | Main : " + this.main + 
                " (Score : " + this.calculerScore() + ")";
     }
-}``
+}

@@ -51,7 +51,7 @@ public class Controller {
 
     @FXML
     public void launchGame(ActionEvent event) throws Exception {
-        List<String> playerNames = new ArrayList<>();
+        List<Player> activePlayers = new ArrayList<>();
         
         // Loop through the container to extract the text from each TextField
         for (Node node : playerNamesContainer.getChildren()) {
@@ -59,24 +59,30 @@ public class Controller {
                 TextField field = (TextField) node;
                 String name = field.getText().trim();
                 
-                // Use the prompt text (e.g., "Player 1 Name") if they left it blank
+                // Use the prompt text if they left it blank
                 if (name.isEmpty()) {
                     name = field.getPromptText();
                 }
-                playerNames.add(name);
+                
+                // Create a new Player object with 1000 starting chips (adjust as needed)
+                activePlayers.add(new Player(name, 1000));
             }
         }
-
-        // Output the collected names to the console to verify it works
-        System.out.println("Starting game with players: " + playerNames);
         
-        // 1. Load the new game board FXML
-        Parent gameBoard = FXMLLoader.load(getClass().getResource("game_board.fxml"));
+        System.out.println("Starting game with " + activePlayers.size() + " players!");
         
-        // 2. Get the current window (Stage) from the button click event
+        // 1. Create an FXMLLoader instance instead of calling the static load() method
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("gameLayout.fxml"));
+        Parent gameBoard = loader.load();
+        
+        // 2. Retrieve the GameController and pass the player data
+        GameController controller = loader.getController();
+        controller.initData(activePlayers);
+        
+        // 3. Get the current window (Stage) from the button click event
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         
-        // 3. Set the new scene and show it
+        // 4. Set the new scene and show it
         stage.setScene(new Scene(gameBoard, 1920, 1080));
         stage.show();
     }
