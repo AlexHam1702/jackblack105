@@ -10,6 +10,11 @@ import javafx.application.Platform;
 import javafx.scene.control.TextInputDialog;
 import java.util.Optional;
 import javafx.scene.control.Alert;
+import javafx.scene.layout.StackPane;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 
 public class GameController {
 
@@ -100,14 +105,7 @@ public class GameController {
         // Check if the first player instantly got 21 (Blackjack)
         verifierScoreActuel();
     }
-    
-    private void verifierScoreActuel() {
-        Player p = players.get(currentPlayerIndex);
-        if (p.calculerScore() >= 21) {
-            handleStand(); // Automatically move to the next player
-        }
-    }
-    
+        
     public void startRound(List<Player> selectedPlayers) {
         this.players = selectedPlayers;
         this.deck = new Deck();
@@ -223,73 +221,150 @@ public class GameController {
     }
     
     private void determinerGagnants() {
-        int scoreCroupier = croupier.calculerScore();
-        StringBuilder resultats = new StringBuilder("Score final du Croupier : " + scoreCroupier + "\n\n");
-
-        for (Player p : players) {
-            int scoreJoueur = p.calculerScore();
-            resultats.append(p.getNom()).append(" (Score: ").append(scoreJoueur).append(") - ");
-
-            if (scoreJoueur > 21) {
-                resultats.append("A sauté ! (Perdu)\n");
-                p.perdreMise();
-            } else if (scoreCroupier > 21) {
-                resultats.append("Gagné ! (Le Croupier a sauté)\n");
-                p.gagnerMise();
-            } else if (scoreJoueur > scoreCroupier) {
-                resultats.append("Gagné !\n");
-                p.gagnerMise();
-            } else if (scoreJoueur == scoreCroupier) {
-                resultats.append("Égalité (Récupère sa mise)\n");
-                p.recupererMise();
-            } else {
-                resultats.append("Perdu.\n");
-                p.perdreMise();
-            }
-        }
-
-        // Refresh the UI to show the updated chip balances
-        buildPlayersUI();
-
-        // Display a native JavaFX popup with the results
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Fin de la manche");
-        alert.setHeaderText("Résultats de la partie");
-        alert.setContentText(resultats.toString());
-        alert.showAndWait();
+        System.out.println("--- Détermination des gagnants ---");
         
-        // TODO: Trigger a method to reset the board for a new round
+        try {
+            int scoreCroupier = croupier.calculerScore();
+            StringBuilder resultats = new StringBuilder("Score final du Croupier : " + scoreCroupier + "\n\n");
+
+            for (Player p : players) {
+                int scoreJoueur = p.calculerScore();
+                resultats.append(p.getNom()).append(" (Score: ").append(scoreJoueur).append(") - ");
+
+                if (scoreJoueur > 21) {
+                    resultats.append("A sauté ! (Perdu)\n");
+                    p.perdreMise();
+                } else if (scoreCroupier > 21) {
+                    resultats.append("Gagné ! (Le Croupier a sauté)\n");
+                    p.gagnerMise();
+                } else if (scoreJoueur > scoreCroupier) {
+                    resultats.append("Gagné !\n");
+                    p.gagnerMise();
+                } else if (scoreJoueur == scoreCroupier) {
+                    resultats.append("Égalité (Récupère sa mise)\n");
+                    p.recupererMise();
+                } else {
+                    resultats.append("Perdu.\n");
+                    p.perdreMise();
+                }
+            }
+
+            buildPlayersUI();
+
+            // --- Build the in-game overlay ---
+            VBox overlay = new VBox(20);
+            overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85); -fx-alignment: center; -fx-padding: 50;");
+            
+            Label titre = new Label("Résultats de la partie");
+            titre.setStyle("-fx-text-fill: gold; -fx-font-size: 36px; -fx-font-weight: bold;");
+            
+            Label detail = new Label(resultats.toString());
+            detail.setStyle("-fx-text-fill: white; -fx-font-size: 20px; -fx-text-alignment: center;");
+            
+            Button btnNouvelleManche = new Button("Nouvelle Manche");
+            btnNouvelleManche.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 10 25; -fx-background-radius: 5;");
+            
+            overlay.getChildren().addAll(titre, detail, btnNouvelleManche);
+
+            // --- Safely Inject overlay ---
+            Scene scene = playersContainer.getScene();
+            Parent currentRoot = scene.getRoot();
+            
+            // Check if we already wrapped the game in a StackPane during a previous round
+            if (currentRoot instanceof StackPane && "gameStack".equals(currentRoot.getId())) {
+                ((StackPane) currentRoot).getChildren().add(overlay);
+            } else {
+                // First time wrapping it: create the StackPane and make it the permanent root
+                StackPane stack = new StackPane(currentRoot, overlay);
+                stack.setId("gameStack");
+                scene.setRoot(stack);
+            }
+
+            // --- Handle the button click ---
+            btnNouvelleManche.setOnAction(e -> {
+                StackPane stack = (StackPane) playersContainer.getScene().getRoot();
+                stack.getChildren().remove(overlay); // Simply delete the dark overlay
+                preparerNouvelleManche();
+            });
+
+            System.out.println("Overlay des résultats affiché avec succès.");
+            
+        } catch (Exception e) {
+            System.err.println("ERREUR FATALE lors de l'affichage des résultats :");
+            e.printStackTrace();
+        }
+    }
+    
+    private void preparerNouvelleManche() {
+        // 1. Empty all hands
+        for (Player p : players) {
+            p.viderMain();
+        }
+        croupier.viderMain();
+        
+        // 2. Reset the turn index and re-enable buttons
+        currentPlayerIndex = 0;
+        btnTirer.setDisable(false);
+        btnRester.setDisable(false);
+        
+        // 3. Clear the UI to show empty green table
+        buildPlayersUI();
+        buildDealerUI();
+        
+        // 4. Start the next round (ask for bets, then deal)
+        Platform.runLater(() -> {
+            demanderMises();
+            demarrerManche();
+        });
     }
     
     private void jouerCroupier() {
         System.out.println("--- Tour du Croupier ---");
-        
-        // The dealer must draw as long as their score is strictly less than 17
-        while (croupier.calculerScore() < 17) {
+        // Start the delayed drawing process
+        tirerCarteCroupierAvecDelai();
+    }
+
+    private void tirerCarteCroupierAvecDelai() {
+        // Condition: Dealer must draw if score is strictly less than 17
+        if (croupier.calculerScore() < 17) {
+            
             Carte nouvelleCarte = deck.tirerCarte();
             croupier.ajouterCarte(nouvelleCarte);
             System.out.println("Le Croupier tire : " + nouvelleCarte.toString());
+            
+            // Refresh the UI so the newly drawn card appears on the screen
+            buildDealerUI();
+            
+            // Create a 1-second delay
+            PauseTransition pause = new PauseTransition(Duration.seconds(1));
+            
+            // When the second is up, run this method again to check the score
+            pause.setOnFinished(event -> tirerCarteCroupierAvecDelai());
+            pause.play();
+            
+        } else {
+            // The dealer has reached 17 or more, the turn is over
+            System.out.println("Score final du Croupier : " + croupier.calculerScore());
+            
+            // Pause for 1.5 seconds before showing the results overlay, 
+            // so players have time to process the dealer's final hand.
+            PauseTransition pauseFin = new PauseTransition(Duration.seconds(1.5));
+            pauseFin.setOnFinished(event -> determinerGagnants());
+            pauseFin.play();
         }
-        
-        System.out.println("Score final du Croupier : " + croupier.calculerScore());
-        
-        // Refresh the UI one last time to show all the drawn cards
-        buildDealerUI();
-        
-        // Once the dealer is done, we need to check who won
-        determinerGagnants();
     }
 
     @FXML
     private void handleHit() {
-        Player currentPlayer = players.get(currentPlayerIndex);
+        // GUARD: Stop immediately if it's already the dealer's turn
+        if (currentPlayerIndex >= players.size()) return;
 
+        Player currentPlayer = players.get(currentPlayerIndex);
         Carte nouvelleCarte = deck.tirerCarte();
         currentPlayer.ajouterCarte(nouvelleCarte);
 
         System.out.println(currentPlayer.getNom() + " a tiré : " + nouvelleCarte.toString());
 
-        // Refresh the UI to show the new score
         buildPlayersUI(); 
         updateActivePlayerUI();
         
@@ -298,6 +373,9 @@ public class GameController {
 
     @FXML
     private void handleStand() {
+        // GUARD: Stop immediately if it's already the dealer's turn
+        if (currentPlayerIndex >= players.size()) return;
+
         currentPlayerIndex++;
         
         if (currentPlayerIndex >= players.size()) {
@@ -309,9 +387,20 @@ public class GameController {
             
             // Trigger the dealer's automatic play
             jouerCroupier(); 
-            
         } else {
             updateActivePlayerUI();
+            // Automatically check if the NEW player already has 21 from the initial deal
+            verifierScoreActuel();
+        }
+    }
+
+    private void verifierScoreActuel() {
+        // GUARD: Stop if the game is over
+        if (currentPlayerIndex >= players.size()) return;
+
+        Player p = players.get(currentPlayerIndex);
+        if (p.calculerScore() >= 21) {
+            handleStand(); // Automatically move to the next player
         }
     }
 }
