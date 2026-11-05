@@ -12,6 +12,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 
 public class Controller {
 
@@ -43,10 +46,35 @@ public class Controller {
         // Generate new TextField for each player
         for (int i = 1; i <= count; i++) {
             TextField nameField = new TextField();
-            nameField.setPromptText("Player " + i + " Name");
+            nameField.setPromptText("Nom du joueur " + i);
             nameField.setMaxWidth(200);
             playerNamesContainer.getChildren().add(nameField);
         }
+    }
+    
+    @FXML
+    public void showInfo(ActionEvent event) {
+        // Creates a simple pop-up dialog with the game rules
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Informations sur le jeu");
+        alert.setHeaderText("Règles du Blackjack");
+        alert.setContentText("Le but du jeu est de battre le croupier en obtenant un score "
+                + "le plus proche possible de 21, sans jamais le dépasser.\n\n"
+                + "- Les cartes numérotées valent leur chiffre.\n"
+                + "- Les têtes (Valet, Dame, Roi) valent 10.\n"
+                + "- L'As vaut 1 ou 11.\n\n"
+                + "Appuyez sur 'Tirer' pour demander une carte, ou 'Rester' pour garder votre main.\n\n"
+                + "Ce jeu a été développé au cours du parcours Robotique et numérique par\n"
+                + "Baptiste Lhors, Alexandre Hamard, Axel Lupter-Vidal");
+        
+        alert.showAndWait();
+    }
+
+    @FXML
+    public void quitGame(ActionEvent event) {
+        // Safely closes the JavaFX application
+        Platform.exit();
+        System.exit(0);
     }
 
     @FXML
@@ -71,18 +99,18 @@ public class Controller {
         
         System.out.println("Starting game with " + activePlayers.size() + " players!");
         
-        // 1. Create an FXMLLoader instance instead of calling the static load() method
+        // Create an FXMLLoader instance instead of calling the static load() method
         FXMLLoader loader = new FXMLLoader(getClass().getResource("gameLayout.fxml"));
         Parent gameBoard = loader.load();
         
-        // 2. Retrieve the GameController and pass the player data
+        // Retrieve the GameController and pass the player data
         GameController controller = loader.getController();
         controller.initData(activePlayers);
         
-        // 3. Get the current window (Stage) from the button click event
+        // Get the current window (Stage) from the button click event
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         
-        // 4. Set the new scene and show it
+        // Set the new scene and show it
         stage.setScene(new Scene(gameBoard, 1920, 1080));
         stage.show();
     }
