@@ -26,6 +26,7 @@ public class GameController {
     @FXML private HBox playersContainer; // An HBox in your FXML to hold all players side-by-side
     @FXML private Button btnTirer;
     @FXML private Button btnRester;
+    @FXML private Button btnAssurance;
 
     private List<Player> players;
     private int currentPlayerIndex = 0;
@@ -261,6 +262,7 @@ public class GameController {
                 box.setStyle("-fx-border-color: white; -fx-border-width: 1; -fx-padding: 10; -fx-alignment: center;");
             }
         }
+        updateAssuranceButton();
     }
     
     private void afficherFinDePartie() {
@@ -339,6 +341,15 @@ public class GameController {
 
                 if (p.getPorteMonnaie() <= 0) {
                     resultats.append("   ⚠ ").append(p.getNom()).append(" n'a plus de jetons et est éliminé !\n");
+                }
+                if (p.getMiseAssurance() > 0) {
+                    if (croupierBlackjack) {
+                        resultats.append("   ✓ Assurance gagnée (+").append(p.getMiseAssurance() * 2).append(" jetons)\n");
+                        p.gagnerAssurance();
+                    } else {
+                        resultats.append("   ✗ Assurance perdue\n");
+                        p.perdreAssurance();
+                    }
                 }
             }
             buildPlayersUI();
@@ -465,7 +476,35 @@ public class GameController {
         
         verifierScoreActuel();
     }
+    
+    @FXML
+    private void handleAssurance() {
+        if (currentPlayerIndex >= players.size()) return;
 
+        Player currentPlayer = players.get(currentPlayerIndex);
+        if (currentPlayer.prendreAssurance()) {
+            buildPlayersUI();
+            updateActivePlayerUI();
+        }
+    }
+
+    private void updateAssuranceButton() {
+        if (currentPlayerIndex >= players.size() || croupier.getMain().isEmpty()) {
+            btnAssurance.setDisable(true);
+            return;
+        }
+
+        Player p = players.get(currentPlayerIndex);
+        boolean croupierMontreAs = croupier.getMain().get(0).isAs();
+        boolean peutAssurer = croupierMontreAs
+                && p.getMain().size() == 2
+                && p.getMiseAssurance() == 0
+                && p.getMiseActuelle() >= 2
+                && p.getPorteMonnaie() >= (p.getMiseActuelle() / 2);
+
+        btnAssurance.setDisable(!peutAssurer);
+    }
+    
     @FXML
     private void handleStand() {
         // GUARD: Stop immediately if it's already the dealer's turn
@@ -477,11 +516,12 @@ public class GameController {
             System.out.println("Tour du croupier !");
             btnTirer.setDisable(true);
             btnRester.setDisable(true);
+            btnAssurance.setDisable(true);
             
             buildDealerUI(); // Reveal the hidden card
             
             // Trigger the dealer's automatic play
-            jouerCroupier(); 
+            jouerCroupier();
         } else {
             updateActivePlayerUI();
             // Automatically check if the NEW player already has 21 from the initial deal

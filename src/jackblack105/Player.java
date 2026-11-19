@@ -80,6 +80,31 @@ public class Player {
         this.porteMonnaie += (int) (this.miseActuelle * 2.5);
         this.miseActuelle = 0;
     }
+    private int miseAssurance = 0;
+
+    public boolean prendreAssurance() {
+        int coutAssurance = this.miseActuelle / 2;
+        if (this.miseAssurance > 0 || coutAssurance <= 0 || this.porteMonnaie < coutAssurance) {
+            return false;
+        }
+        this.porteMonnaie -= coutAssurance;
+        this.miseAssurance = coutAssurance;
+        return true;
+    }
+
+    public void gagnerAssurance() {
+        // Pays 2:1 -> returns the insurance bet (1x) + 2x profit = 3x total
+        this.porteMonnaie += (this.miseAssurance * 3);
+        this.miseAssurance = 0;
+    }
+
+    public void perdreAssurance() {
+        this.miseAssurance = 0;
+    }
+
+    public int getMiseAssurance() {
+        return this.miseAssurance;
+    }
 
     // --- GETTERS & AFFICHAGE 
     public String getNom() {
@@ -97,6 +122,7 @@ public class Player {
     public ArrayList<Carte> getMain() { 
         return this.main;
     }
+    
 
     @Override
     public String toString() {

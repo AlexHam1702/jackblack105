@@ -44,6 +44,8 @@
             
             <Button fx:id="btnRester" text="Rester (Stand)" onAction="#handleStand" 
                     style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-color: #f44336; -fx-text-fill: white; -fx-background-radius: 5;"/>
+        	<Button fx:id="btnAssurance" text="Assurance" onAction="#handleAssurance"
+        style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-color: #FF9800; -fx-text-fill: white; -fx-background-radius: 5;"/>
         </HBox>
     </bottom>
 
