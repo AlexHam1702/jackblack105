@@ -56,20 +56,29 @@ public class Player {
         int score = 0;
         int nombreAs = 0;
 
-        for (Carte carte : this.main) { 
-            int valeur = carte.getValeur();
-            score += valeur;
-            if (valeur == 11) { 
+        for (Carte carte : this.main) {
+            score += carte.getValeur();
+            if (carte.isAs()) {
                 nombreAs++;
             }
         }
 
+        // Automatically convert Aces from 11 to 1 if the hand would bust
         while (score > 21 && nombreAs > 0) {
             score -= 10;
             nombreAs--;
         }
 
         return score;
+    }
+    
+    public boolean estBlackjack() {
+        return this.main.size() == 2 && this.calculerScore() == 21;
+    }
+
+    public void gagnerBlackjack() {
+        this.porteMonnaie += (int) (this.miseActuelle * 2.5);
+        this.miseActuelle = 0;
     }
 
     // --- GETTERS & AFFICHAGE 

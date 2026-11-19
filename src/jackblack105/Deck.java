@@ -15,13 +15,12 @@ public class Deck {
     // Fills the deck with 52 standard cards
     private void genererPaquet() {
         String[] couleurs = {"Cœur", "Carreau", "Trèfle", "Pique"};
-        
-        // Represents 2-10, Jack (10), Queen (10), King (10), and Ace (11)
+        String[] noms = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Valet", "Dame", "Roi", "As"};
         int[] valeurs = {2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11};
 
         for (String couleur : couleurs) {
-            for (int valeur : valeurs) {
-                this.cartes.add(new Carte(couleur, valeur));
+            for (int i = 0; i < noms.length; i++) {
+                this.cartes.add(new Carte(couleur, noms[i], valeurs[i]));
             }
         }
     }

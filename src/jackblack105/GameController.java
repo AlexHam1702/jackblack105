@@ -1,12 +1,16 @@
 package jackblack105;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.TextField;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.TextInputDialog;
 import java.util.Optional;
 import javafx.scene.control.Alert;
@@ -42,49 +46,74 @@ public class GameController {
         // 2. Use Platform.runLater to let JavaFX physically render the screen before opening popups
         Platform.runLater(() -> {
             demanderMises();
-            demarrerManche();
         });
     }
     
     private void demanderMises() {
-        for (Player p : players) {
-            boolean miseValide = false;
-            
-            while (!miseValide) {
-                TextInputDialog dialog = new TextInputDialog("10"); // Default bet of 10
-                dialog.setTitle("Phase de Mise");
-                dialog.setHeaderText("Tour de " + p.getNom());
-                dialog.setContentText("Combien voulez-vous miser ? (Solde : " + p.getPorteMonnaie() + ")");
+        VBox overlay = new VBox(20);
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85); -fx-alignment: center; -fx-padding: 50;");
 
-                Optional<String> result = dialog.showAndWait();
-                
-                if (result.isPresent()) {
-                    try {
-                        int montant = Integer.parseInt(result.get().trim());
-                        
-                        // Your Player.miser() method returns false if the bet is invalid
-                        if (p.miser(montant)) {
-                            miseValide = true;
-                        } else {
-                            Alert alert = new Alert(Alert.AlertType.WARNING);
-                            alert.setHeaderText("Mise invalide");
-                            alert.setContentText("Le montant doit être supérieur à 0 et inférieur ou égal à votre solde.");
-                            alert.showAndWait();
-                        }
-                    } catch (NumberFormatException e) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setHeaderText("Erreur de saisie");
-                        alert.setContentText("Veuillez entrer un nombre entier valide.");
-                        alert.showAndWait();
+        Label titre = new Label("Phase de Mise");
+        titre.setStyle("-fx-text-fill: gold; -fx-font-size: 36px; -fx-font-weight: bold;");
+
+        Label erreurLabel = new Label("");
+        erreurLabel.setStyle("-fx-text-fill: #ff5252; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+        VBox champsMises = new VBox(15);
+        champsMises.setStyle("-fx-alignment: center;");
+
+        // Map each player to their corresponding TextField
+        Map<Player, TextField> inputs = new HashMap<>();
+
+        for (Player p : players) {
+            HBox ligne = new HBox(15);
+            ligne.setStyle("-fx-alignment: center;");
+
+            Label infoJoueur = new Label(p.getNom() + " (Solde : " + p.getPorteMonnaie() + ") :");
+            infoJoueur.setStyle("-fx-text-fill: white; -fx-font-size: 18px; -fx-min-width: 260;");
+
+            TextField champMise = new TextField("10");
+            champMise.setMaxWidth(120);
+            champMise.setStyle("-fx-font-size: 16px;");
+
+            inputs.put(p, champMise);
+            ligne.getChildren().addAll(infoJoueur, champMise);
+            champsMises.getChildren().add(ligne);
+        }
+
+        Button btnValider = new Button("Valider les mises");
+        btnValider.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 10 25; -fx-background-radius: 5;");
+
+        btnValider.setOnAction(e -> {
+            // 1. Validate every input first before deducting any chips
+            Map<Player, Integer> montantsValides = new HashMap<>();
+
+            for (Player p : players) {
+                try {
+                    int montant = Integer.parseInt(inputs.get(p).getText().trim());
+                    if (montant <= 0 || montant > p.getPorteMonnaie()) {
+                        erreurLabel.setText("Mise invalide pour " + p.getNom() + " (1 à " + p.getPorteMonnaie() + ").");
+                        return;
                     }
-                } else {
-                    // If the player clicks "Cancel" or closes the window, force a minimum bet
-                    System.out.println("Mise annulée, mise minimale de 10 appliquée.");
-                    p.miser(10);
-                    miseValide = true;
+                    montantsValides.put(p, montant);
+                } catch (NumberFormatException ex) {
+                    erreurLabel.setText("Veuillez entrer un nombre entier pour " + p.getNom() + ".");
+                    return;
                 }
             }
-        }
+
+            // 2. Apply all valid bets
+            for (Map.Entry<Player, Integer> entry : montantsValides.entrySet()) {
+                entry.getKey().miser(entry.getValue());
+            }
+
+            // 3. Remove the betting overlay and deal the cards
+            getGameStack().getChildren().remove(overlay);
+            demarrerManche();
+        });
+
+        overlay.getChildren().addAll(titre, champsMises, erreurLabel, btnValider);
+        getGameStack().getChildren().add(overlay);
     }
 
     
@@ -163,6 +192,20 @@ public class GameController {
         dealerArea.getChildren().add(cardsBox);
     }
     
+    private StackPane getGameStack() {
+        Scene scene = playersContainer.getScene();
+        Parent currentRoot = scene.getRoot();
+
+        if (currentRoot instanceof StackPane && "gameStack".equals(currentRoot.getId())) {
+            return (StackPane) currentRoot;
+        } else {
+            StackPane stack = new StackPane(currentRoot);
+            stack.setId("gameStack");
+            scene.setRoot(stack);
+            return stack;
+        }
+    }
+    
     private void buildPlayersUI() {
         playersContainer.getChildren().clear(); // Clear existing UI to prevent duplicates
 
@@ -220,19 +263,65 @@ public class GameController {
         }
     }
     
+    private void afficherFinDePartie() {
+        VBox overlay = new VBox(20);
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.9); -fx-alignment: center; -fx-padding: 50;");
+
+        Label titre = new Label("Partie Terminée");
+        titre.setStyle("-fx-text-fill: #f44336; -fx-font-size: 40px; -fx-font-weight: bold;");
+
+        Label message = new Label("Tous les joueurs ont perdu leurs jetons !");
+        message.setStyle("-fx-text-fill: white; -fx-font-size: 22px;");
+
+        // --- Return to Main Menu Button ---
+        Button btnMenu = new Button("Retour au Menu");
+        btnMenu.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10 25; -fx-background-radius: 5;");
+        btnMenu.setOnAction(e -> {
+            try {
+                // Make sure "layout.fxml" matches your landing screen's exact filename
+                Parent menuRoot = FXMLLoader.load(getClass().getResource("layout.fxml"));
+                playersContainer.getScene().setRoot(menuRoot);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        // --- Quit Button ---
+        Button btnQuitter = new Button("Quitter le jeu");
+        btnQuitter.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-background-color: #f44336; -fx-text-fill: white; -fx-padding: 10 25; -fx-background-radius: 5;");
+        btnQuitter.setOnAction(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
+        HBox boutons = new HBox(20, btnMenu, btnQuitter);
+        boutons.setStyle("-fx-alignment: center;");
+
+        overlay.getChildren().addAll(titre, message, boutons);
+        getGameStack().getChildren().add(overlay);
+    }
+    
     private void determinerGagnants() {
         System.out.println("--- Détermination des gagnants ---");
         
         try {
-            int scoreCroupier = croupier.calculerScore();
+        	int scoreCroupier = croupier.calculerScore();
+            boolean croupierBlackjack = croupier.estBlackjack();
             StringBuilder resultats = new StringBuilder("Score final du Croupier : " + scoreCroupier + "\n\n");
 
             for (Player p : players) {
                 int scoreJoueur = p.calculerScore();
+                boolean joueurBlackjack = p.estBlackjack();
                 resultats.append(p.getNom()).append(" (Score: ").append(scoreJoueur).append(") - ");
 
                 if (scoreJoueur > 21) {
                     resultats.append("A sauté ! (Perdu)\n");
+                    p.perdreMise();
+                } else if (joueurBlackjack && !croupierBlackjack) {
+                    resultats.append("BLACKJACK ! Gagné (3:2)\n");
+                    p.gagnerBlackjack();
+                } else if (!joueurBlackjack && croupierBlackjack) {
+                    resultats.append("Perdu (Le Croupier a un Blackjack).\n");
                     p.perdreMise();
                 } else if (scoreCroupier > 21) {
                     resultats.append("Gagné ! (Le Croupier a sauté)\n");
@@ -247,8 +336,11 @@ public class GameController {
                     resultats.append("Perdu.\n");
                     p.perdreMise();
                 }
-            }
 
+                if (p.getPorteMonnaie() <= 0) {
+                    resultats.append("   ⚠ ").append(p.getNom()).append(" n'a plus de jetons et est éliminé !\n");
+                }
+            }
             buildPlayersUI();
 
             // --- Build the in-game overlay ---
@@ -296,25 +388,28 @@ public class GameController {
     }
     
     private void preparerNouvelleManche() {
-        // 1. Empty all hands
+        players.removeIf(p -> p.getPorteMonnaie() <= 0);
+
+        if (players.isEmpty()) {
+            afficherFinDePartie();
+            return;
+        }
+
+        
         for (Player p : players) {
             p.viderMain();
         }
         croupier.viderMain();
         
-        // 2. Reset the turn index and re-enable buttons
         currentPlayerIndex = 0;
         btnTirer.setDisable(false);
         btnRester.setDisable(false);
         
-        // 3. Clear the UI to show empty green table
         buildPlayersUI();
         buildDealerUI();
         
-        // 4. Start the next round (ask for bets, then deal)
         Platform.runLater(() -> {
             demanderMises();
-            demarrerManche();
         });
     }
     
